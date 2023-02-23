@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+
+###################################################################################
+# requires buildpack:                                                             #
+# https://buildpack-registry.s3.amazonaws.com/buildpacks/heroku-community/apt.tgz #
+###################################################################################
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+WX_WIDGETS_VERSION=3.0.5
+WX_WIDGETS_PKG_URL="https://github.com/wxWidgets/wxWidgets/releases/download/v${WX_WIDGETS_VERSION}/wxWidgets-${WX_WIDGETS_VERSION}.tar.bz2"
+WX_WIDGETS_TGZ_FILE=wxWidgets.tgz
+WX_WIDGETS_SRC_DIR=wxWidgets-${WX_WIDGETS_VERSION}
+WX_WIDGETS_BUILD_DIR=gtk-build
+DIFF_PDF_VERSION=0.4.1
+DIFF_PDF_PKG_URL="https://github.com/vslavik/diff-pdf/releases/download/v${DIFF_PDF_VERSION}/diff-pdf-${DIFF_PDF_VERSION}.tar.gz"
+DIFF_PDF_TGZ_FILE=diff-pdf.tgz
+DIFF_PDF_SRC_DIR="diff-pdf-${DIFF_PDF_VERSION}"
+
+PKG_CONFIG_PATH="$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu/pkgconfig:$BUILD_DIR/.apt/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+echo "-----> installing wxWidgets version ${WX_WIDGETS_VERSION} for diff-pdf"
+echo "-----> BUILD_DIR ${BUILD_DIR}"
+echo "-----> CACHE_DIR ${CACHE_DIR}"
+echo "-----> PKG_CONFIG_PATH ${PKG_CONFIG_PATH}"
+
+ls $BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig
+ls $BUILD_DIR/.apt/usr/lib/i386-linux-gnu/pkgconfig
+ls $BUILD_DIR/.apt/usr/lib/pkgconfig
+ls $BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig
+ls $BUILD_DIR/.apt/usr/lib/i386-linux-gnu/pkgconfig
+
+cd $BUILD_DIR
+
+echo "-----> Downloading source code for wxWidgets from ${WX_WIDGETS_PKG_URL} to ${WX_WIDGETS_TGZ_FILE}"
+wget -O $WX_WIDGETS_TGZ_FILE $WX_WIDGETS_PKG_URL
+
+# see: https://wiki.wxwidgets.org/Compiling_and_getting_started
+echo "-----> Unpacking source code from ${DIFF_PDF_TGZ_FILE} into ${DIFF_PDF_SRC_DIR}"
+tar xvf $WX_WIDGETS_TGZ_FILE
+cd $WX_WIDGETS_SRC_DIR
+mkdir $WX_WIDGETS_BUILD_DIR
+cd $WX_WIDGETS_BUILD_DIR
+
+../configure --with-gtk=3 &&
+    make                   &&
+    make install            &&
+    ldconfig
+
+echo "-----> Installing diff-pdf ${DIFF_PDF_VERSION}"
+echo "-----> BUILD_DIR ${BUILD_DIR}"
+echo "-----> CACHE_DIR ${CACHE_DIR}"
+
+cd $BUILD_DIR
+
+echo "-----> Downloading source code for diff-pdf from ${DIFF_PDF_PKG_URL} to ${DIFF_PDF_TGZ_FILE}"
+wget -O $DIFF_PDF_TGZ_FILE $DIFF_PDF_PKG_URL
+
+echo "-----> Unpacking source code from ${DIFF_PDF_TGZ_FILE} into ${DIFF_PDF_SRC_DIR}"
+tar xvf $DIFF_PDF_TGZ_FILE
+cd $DIFF_PDF_SRC_DIR
+
+##############################################################
+# see:                                                       #
+# https://github.com/vslavik/diff-pdf#compiling-from-sources #
+##############################################################
+echo "-----> Building source..."
+./bootstrap     &&
+    ./configure  &&
+    make          &&
+    make install
+
+##############################################################
+# links:                                                     #
+# https://aur.archlinux.org/packages/diff-pdf#comment-864897 #
+# --prefix=/usr --with-wx-config=wx-config-gtk3              #
+#                                                            #
+# https://stackoverflow.com/a/48900728                       #
+##############################################################
+
+# APT_DIR=$CACHE_DIR/apt
+# APT_CACHE_DIR=$CACHE_DIR/apt/cache
+# echo "----->   APT_DIR ${APT_DIR}"
+# echo "----->   APT_CACHE_DIR ${APT_CACHE_DIR}"
+
+# echo "-----> what files are in apt dir"
+# ls $APT_DIR
+
+# echo "-----> what files are in apt cache dir"
+# ls $APT_CACHE_DIR
+
+# export PATH="$BUILD_DIR/.apt/usr/bin:$PATH"
+# export LD_LIBRARY_PATH="$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib:$LD_LIBRARY_PATH"
+# export LIBRARY_PATH="$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib:$LIBRARY_PATH"
+# export INCLUDE_PATH="$BUILD_DIR/.apt/usr/include:$BUILD_DIR/.apt/usr/include/x86_64-linux-gnu:$INCLUDE_PATH"
+
+# echo "-----> PATH: ${PATH}"
+
+# echo "-----> ${BUILD_DIR}/.apt/usr/"
+# ls $BUILD_DIR/.apt/usr/
+
+# echo "-----> ${BUILD_DIR}/.apt/usr/bin/"
+# ls $BUILD_DIR/.apt/usr/bin/
+
+# echo "-----> INCLUDE_PATH: ${INCLUDE_PATH}"
+# echo "----->   $BUILD_DIR/.apt/usr/include/"
+# ls $BUILD_DIR/.apt/usr/include/
+
+# echo "-----> LIBRARY_PATH: ${LIBRARY_PATH}"
+# echo "-----> $BUILD_DIR/.apt/usr/lib"
+# ls $BUILD_DIR/.apt/usr/lib/
+# echo "----->   $BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu"
+# ls $BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/
+
+# echo "-----> LIB_EXEC"
+# echo "----->   $BUILD_DIR/.apt/usr/libexec"
+# ls $BUILD_DIR/.apt/usr/libexec/
+
+# echo "-----> SBIN"
+# echo "----->   $BUILD_DIR/.apt/usr/sbin"
+# ls $BUILD_DIR/.apt/usr/sbin/
+
+# echo "-----> SHARE"
+# echo "----->   $BUILD_DIR/.apt/usr/share"
+# ls $BUILD_DIR/.apt/usr/share/
+
+# echo "----->   $BUILD_DIR/.apt/usr/include/wx-3.0/wx/"
+# ls $BUILD_DIR/.apt/usr/include/wx-3.0/wx/
+# echo "----->   $BUILD_DIR/.apt/usr/include/x86_64-linux-gnu"
+# ls $BUILD_DIR/.apt/usr/include/x86_64-linux-gnu/
+
+# "$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu/pkgconfig:$BUILD_DIR/.apt/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
+# echo "-----> PKG_CONFIG_PATH: ${PKG_CONFIG_PATH}"
+# ls $BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig/
+# ls $BUILD_DIR/.apt/usr/lib/i386-linux-gnu/pkgconfig
